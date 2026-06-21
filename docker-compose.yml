@@ -33,6 +33,30 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: realorfake_app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-postgres}"
+      REDIS_URL: "redis://redis:6379/0"
+      MODEL_PATH: "/app/models/model.onnx"
+      MODEL_NAME: "${MODEL_NAME:-model}"
+      HOST: "0.0.0.0"
+      PORT: "8080"
+    volumes:
+      - ${MODEL_ONNX_PATH:-./models/model.onnx}:/app/models/model.onnx:ro
+      - ${MODEL_DATA_PATH:-./models/model.onnx.data}:/app/models/model.onnx.data:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   redis_data:
